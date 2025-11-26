@@ -1,9 +1,24 @@
-const Product = require('../models/Product');
+const { Product, Category } = require('../models');
 
 // Obtener todos los productos
 exports.getAllProducts = async (req, res) => {
     try {
-        const products = await Product.findAll();
+        const { categoryId } = req.query;
+        
+        const whereClause = {};
+        if (categoryId) {
+            whereClause.categoryId = categoryId;
+        }
+
+        const products = await Product.findAll({
+            where: whereClause,
+            include: [{
+                model: Category,
+                as: 'category',
+                attributes: ['id', 'nombre']
+            }]
+        });
+        
         res.json({
             success: true,
             message: 'Productos obtenidos correctamente',
@@ -22,7 +37,13 @@ exports.getAllProducts = async (req, res) => {
 // Obtener producto por ID
 exports.getProductById = async (req, res) => {
     try {
-        const product = await Product.findByPk(req.params.id);
+        const product = await Product.findByPk(req.params.id, {
+            include: [{
+                model: Category,
+                as: 'category',
+                attributes: ['id', 'nombre']
+            }]
+        });
 
         if (!product) {
             return res.status(404).json({
@@ -50,7 +71,7 @@ exports.getProductById = async (req, res) => {
 // Crear producto
 exports.createProduct = async (req, res) => {
     try {
-        const { nombre, precio, descripcion } = req.body;
+        const { nombre, precio, descripcion, categoryId, imageUrl } = req.body;
 
         if (!nombre || !precio) {
             return res.status(400).json({
@@ -68,7 +89,13 @@ exports.createProduct = async (req, res) => {
             });
         }
 
-        const product = await Product.create({ nombre, precio, descripcion });
+        const product = await Product.create({ 
+            nombre, 
+            precio, 
+            descripcion,
+            categoryId,
+            imageUrl
+        });
 
         res.status(201).json({
             success: true,
@@ -88,7 +115,7 @@ exports.createProduct = async (req, res) => {
 // Actualizar producto
 exports.updateProduct = async (req, res) => {
     try {
-        const { nombre, precio, descripcion } = req.body;
+        const { nombre, precio, descripcion, categoryId, imageUrl } = req.body;
         const product = await Product.findByPk(req.params.id);
 
         if (!product) {
@@ -107,7 +134,13 @@ exports.updateProduct = async (req, res) => {
             });
         }
 
-        await product.update({ nombre, precio, descripcion });
+        await product.update({ 
+            nombre, 
+            precio, 
+            descripcion,
+            categoryId,
+            imageUrl
+        });
 
         res.json({
             success: true,
